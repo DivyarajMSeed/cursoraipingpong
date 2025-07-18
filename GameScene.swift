@@ -71,7 +71,7 @@ class GameScene: SCNScene, SCNSceneRendererDelegate {
         let aiGeometry = SCNBox(width: paddleWidth, height: paddleHeight, length: paddleLength, chamferRadius: 0.05)
         aiGeometry.firstMaterial?.diffuse.contents = UIColor.blue
         aiPaddle = SCNNode(geometry: aiGeometry)
-        aiPaddle.position = SCNVector3(0, paddleHeight/2, aiZ)
+        aiPaddle.position = SCNVector3(0, paddleHeight/2 + 0.01, aiZ) // Ensure above table
         aiPaddle.physicsBody = SCNPhysicsBody.kinematic()
         aiPaddle.physicsBody?.categoryBitMask = 4
         rootNode.addChildNode(aiPaddle)
@@ -182,13 +182,17 @@ class GameScene: SCNScene, SCNSceneRendererDelegate {
         let dt = time - lastUpdateTime
         lastUpdateTime = time
         
-        // AI Paddle follows ball
-        let aiTargetX = ball.presentation.position.x
+        // AI Paddle only moves when ball is on AI's half and moving toward AI
+        let ballZ = ball.presentation.position.z
+        let ballVZ = ball.physicsBody?.velocity.z ?? 0
         let aiCurrentX = aiPaddle.position.x
-        let diff = aiTargetX - aiCurrentX
-        let move = max(-aiSpeed, min(aiSpeed, diff))
         let maxX = Float(tableWidth/2 - paddleWidth/2 - 0.1)
-        aiPaddle.position.x = min(max(aiCurrentX + move, -maxX), maxX)
+        if ballZ > 0 && ballVZ > 0 {
+            let aiTargetX = ball.presentation.position.x
+            let diff = aiTargetX - aiCurrentX
+            let move = max(-aiSpeed, min(aiSpeed, diff))
+            aiPaddle.position.x = min(max(aiCurrentX + move, -maxX), maxX)
+        }
         
         // Camera follows ball (slight shake on paddle hit)
         let camBaseY: Float = 8
